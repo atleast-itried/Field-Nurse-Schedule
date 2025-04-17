@@ -15,7 +15,6 @@
     "noImplicitAny": false,
     "types": [
       "node",
-      "jest",
       "express",
       "pg",
       "cors",
