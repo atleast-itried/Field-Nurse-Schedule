@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { createTables, generateTimeSlots } from './models';
 
-const initializeDatabase = async () => {
+export const initDb = async () => {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
   });
@@ -16,10 +16,11 @@ const initializeDatabase = async () => {
     console.log('Database initialization completed successfully!');
   } catch (error) {
     console.error('Error initializing database:', error);
+    throw error;
   } finally {
     await pool.end();
   }
 };
 
 // Run the initialization
-initializeDatabase(); 
+initDb(); 
