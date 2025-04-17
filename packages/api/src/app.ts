@@ -19,7 +19,10 @@ app.use(cors());
 app.use(express.json());
 
 // Database setup
-setupDatabase();
+setupDatabase().catch(error => {
+  console.error('Failed to initialize database:', error);
+  process.exit(1);
+});
 
 // Routes
 setupRoutes(app, io);

@@ -7,19 +7,25 @@ dotenv.config();
 
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: {
+    rejectUnauthorized: false
+  }
 };
 
 const pool = new Pool(poolConfig);
 
 export const setupDatabase = async (): Promise<void> => {
   try {
+    console.log('Creating tables...');
     await createTables(pool);
+    
+    console.log('Generating time slots...');
     await generateTimeSlots(pool, 30); // Generate slots for the next 30 days
-    console.log('Database connection established and tables created');
+    
+    console.log('Database initialization completed successfully!');
   } catch (error) {
     console.error('Database setup failed:', error);
-    process.exit(1);
+    throw error;
   }
 };
 
