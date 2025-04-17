@@ -13,9 +13,6 @@ export interface TimeSlot {
 export const createTables = async (pool: Pool): Promise<void> => {
   const client = await pool.connect();
   try {
-    // Drop existing tables to start fresh
-    await client.query('DROP TABLE IF EXISTS time_slots CASCADE');
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS time_slots (
         id SERIAL PRIMARY KEY,
