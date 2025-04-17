@@ -1,0 +1,193 @@
+openapi: 3.0.0
+info:
+  title: Field Nurse Schedule API
+  version: 1.0.0
+  description: API for managing field nurse time slots and schedules
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+
+components:
+  schemas:
+    TimeSlot:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [available, reserved]
+        nurse_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - start_time
+        - end_time
+        - status
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+paths:
+  /slots:
+    get:
+      summary: Get all available time slots
+      description: Returns a list of all available time slots
+      parameters:
+        - name: status
+          in: query
+          description: Filter slots by status
+          required: false
+          schema:
+            type: string
+            enum: [available, reserved]
+            default: available
+      responses:
+        '200':
+          description: List of time slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /slots/{date}:
+    get:
+      summary: Get time slots for a specific date
+      description: Returns a list of time slots for the specified date
+      parameters:
+        - name: date
+          in: path
+          description: Date in YYYY-MM-DD format
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of time slots for the date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /slots/{id}/reserve:
+    post:
+      summary: Reserve a time slot
+      description: Reserve a specific time slot for a nurse
+      parameters:
+        - name: id
+          in: path
+          description: Time slot ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nurse_id:
+                  type: string
+              required:
+                - nurse_id
+      responses:
+        '200':
+          description: Time slot reserved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSlot'
+        '400':
+          description: Slot not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /slots/{id}/cancel:
+    post:
+      summary: Cancel a slot reservation
+      description: Cancel a nurse's reservation for a specific time slot
+      parameters:
+        - name: id
+          in: path
+          description: Time slot ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nurse_id:
+                  type: string
+              required:
+                - nurse_id
+      responses:
+        '200':
+          description: Reservation cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSlot'
+        '400':
+          description: Invalid reservation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
