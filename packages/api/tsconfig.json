@@ -12,7 +12,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmitOnError": false,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "types": [
+      "node",
+      "jest",
+      "express",
+      "pg",
+      "cors",
+      "express-rate-limit"
+    ]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]
