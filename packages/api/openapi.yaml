@@ -1,0 +1,162 @@
+openapi: 3.1.0
+info:
+  title: Field Nurse Schedule API
+  version: 1.0.0
+  description: API for managing field nurse scheduling and slot reservations
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://your-app.herokuapp.com
+    description: Production server
+
+components:
+  schemas:
+    Slot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the slot
+        date:
+          type: string
+          format: date
+          description: The date of the slot (YYYY-MM-DD)
+        start:
+          type: string
+          format: date-time
+          description: Start time of the slot
+        end:
+          type: string
+          format: date-time
+          description: End time of the slot
+        reserved:
+          type: boolean
+          description: Whether the slot is reserved
+          default: false
+      required:
+        - id
+        - date
+        - start
+        - end
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+
+paths:
+  /api/slots:
+    get:
+      summary: Get available slots
+      description: Retrieve all slots or filter by date
+      parameters:
+        - name: date
+          in: query
+          description: Filter slots by date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+          required: false
+      responses:
+        '200':
+          description: List of slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Create a new slot
+      description: Create a new time slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+              required:
+                - date
+                - start
+                - end
+      responses:
+        '201':
+          description: Slot created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Slot'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/reservations:
+    post:
+      summary: Reserve a slot
+      description: Reserve an available time slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slotId:
+                  type: string
+                  format: uuid
+              required:
+                - slotId
+      responses:
+        '200':
+          description: Slot reserved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Slot'
+        '400':
+          description: Invalid request or slot already reserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Slot not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
