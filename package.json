@@ -5,6 +5,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "npm run start --workspace=packages/api",
     "dev": "concurrently \"npm run dev --workspace=packages/api\" \"npm run dev --workspace=packages/ui\"",

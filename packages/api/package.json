@@ -41,7 +41,7 @@
     "@types/methods": "^1.1.4",
     "@types/stack-utils": "^2.0.3",
     "@types/strip-bom": "^3.0.0",
-    "@types/strip-json-comments": "^0.0.32",
+    "@types/strip-json-comments": "^3.0.3",
     "@types/superagent": "^8.1.4",
     "@types/supertest": "^6.0.2",
     "@types/yargs": "^17.0.32",
