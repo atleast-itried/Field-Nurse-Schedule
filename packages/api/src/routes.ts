@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Application, Request, Response, Router } from 'express';
 import { Server } from 'socket.io';
 import { query } from './db';
 import { TimeSlot } from './models';
@@ -21,8 +21,13 @@ const validateNurseId = (req: any, res: any, next: any) => {
   next();
 };
 
-export const setupRoutes = (app: Router, io: Server) => {
+export const setupRoutes = (app: Application, io: Server) => {
   const router = Router();
+
+  // Health check endpoint
+  router.get('/health', (req: Request, res: Response) => {
+    res.json({ status: 'ok' });
+  });
 
   // Get all slots with optional status filter
   router.get('/slots', async (req, res) => {
@@ -128,5 +133,6 @@ export const setupRoutes = (app: Router, io: Server) => {
     }
   });
 
+  // Mount all routes under /api
   app.use('/api', router);
 }; 
