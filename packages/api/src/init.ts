@@ -4,6 +4,9 @@ import { createTables, generateTimeSlots } from './models';
 export const initDb = async () => {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
   try {
