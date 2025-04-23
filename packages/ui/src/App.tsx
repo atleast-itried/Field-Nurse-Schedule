@@ -33,6 +33,7 @@ function App() {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [socket, setSocket] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'date' | 'all'>('date');
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const newSocket = io(API_URL);
@@ -41,7 +42,9 @@ function App() {
     newSocket.on('slotUpdated', (updatedSlot: TimeSlot) => {
       setSlots(prevSlots => 
         prevSlots.map(slot => 
-          slot.id === updatedSlot.id ? updatedSlot : slot
+          slot.id === updatedSlot.id && !optimisticUpdates.has(slot.id)
+            ? updatedSlot 
+            : slot
         )
       );
     });
@@ -49,7 +52,7 @@ function App() {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [optimisticUpdates]);
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -74,7 +77,10 @@ function App() {
   }, [selectedDate, viewMode]);
 
   const handleReserveSlot = async (slotId: number) => {
-    // Optimistically update the UI
+    // Add to optimistic updates
+    setOptimisticUpdates(prev => new Set(prev).add(slotId));
+    
+    // Optimistic update
     setSlots(prevSlots =>
       prevSlots.map(slot =>
         slot.id === slotId
@@ -93,7 +99,7 @@ function App() {
       });
       
       if (!response.ok) {
-        // Revert the optimistic update if the API call fails
+        // Revert optimistic update on failure
         setSlots(prevSlots =>
           prevSlots.map(slot =>
             slot.id === slotId
@@ -103,7 +109,20 @@ function App() {
         );
         throw new Error('Failed to reserve slot');
       }
+
+      // Remove from optimistic updates after successful reservation
+      setOptimisticUpdates(prev => {
+        const next = new Set(prev);
+        next.delete(slotId);
+        return next;
+      });
     } catch (error) {
+      // Remove from optimistic updates on error
+      setOptimisticUpdates(prev => {
+        const next = new Set(prev);
+        next.delete(slotId);
+        return next;
+      });
       console.error('Error reserving slot:', error);
     }
   };
