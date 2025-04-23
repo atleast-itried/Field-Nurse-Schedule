@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   format, 
   startOfMonth, 
@@ -14,6 +14,7 @@ import {
 import { io } from 'socket.io-client';
 import SlotsView from './components/SlotsView';
 import { Button } from './components/Button/Button';
+import logo from './assets/logo.svg';
 import './App.css';
 
 interface TimeSlot {
@@ -73,6 +74,15 @@ function App() {
   }, [selectedDate, viewMode]);
 
   const handleReserveSlot = async (slotId: number) => {
+    // Optimistically update the UI
+    setSlots(prevSlots =>
+      prevSlots.map(slot =>
+        slot.id === slotId
+          ? { ...slot, status: 'reserved' as const, nurse_id: 'current-user-id' }
+          : slot
+      )
+    );
+
     try {
       const response = await fetch(`${API_URL}/api/slots/${slotId}/reserve`, {
         method: 'POST',
@@ -83,6 +93,14 @@ function App() {
       });
       
       if (!response.ok) {
+        // Revert the optimistic update if the API call fails
+        setSlots(prevSlots =>
+          prevSlots.map(slot =>
+            slot.id === slotId
+              ? { ...slot, status: 'available' as const, nurse_id: undefined }
+              : slot
+          )
+        );
         throw new Error('Failed to reserve slot');
       }
     } catch (error) {
@@ -102,7 +120,8 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Field Nurse Schedule</h1>
+        <img src={logo} alt="Field Nurse Logo" className="app-logo" />
+        <h1 className="app-title">Field Nurse Schedule</h1>
         <div className="view-toggle">
           <Button
             variant={viewMode === 'date' ? 'primary' : 'secondary'}

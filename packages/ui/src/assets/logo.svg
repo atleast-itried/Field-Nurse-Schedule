@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420">
+  <defs>
+    <style>
+      .pin { fill: #007BFF; }
+      .cross { fill: #ffffff; }
+      .cap { fill: #ffffff; }
+      .text { fill: #007BFF; font-family: Arial, sans-serif; font-size: 32px; font-weight: bold; text-anchor: middle; }
+    </style>
+  </defs>
+  <!-- Map pin shape -->
+  <path class="pin" d="
+    M150,20
+    C190,20 225,55 225,95
+    C225,145 150,330 150,330
+    C150,330 75,145 75,95
+    C75,55 110,20 150,20
+    Z
+  "/>
+  <!-- Medical cross centered -->
+  <rect class="cross" x="135" y="120" width="30" height="90"/>
+  <rect class="cross" x="105" y="150" width="90" height="30"/>
+  <!-- Nurse cap -->
+  <path class="cap" d="
+    M90,70
+    H210
+    L195,110
+    H105
+    Z
+  "/>
+  <!-- Company name text -->
+  <text class="text" x="150" y="400">FIELD NURSE</text>
+</svg> 

@@ -133,6 +133,29 @@ export const setupRoutes = (app: Application, io: Server) => {
     }
   });
 
+  // Reset all slots to available
+  router.post('/slots/reset', async (req, res) => {
+    try {
+      const result = await query(
+        `UPDATE time_slots 
+         SET status = 'available', nurse_id = NULL 
+         WHERE status = 'reserved' 
+         RETURNING *`,
+        []
+      );
+
+      // Emit socket events for each updated slot
+      result.rows.forEach(slot => {
+        io.emit('slotUpdated', slot);
+      });
+
+      res.json({ message: 'All slots reset to available', updatedSlots: result.rows });
+    } catch (error) {
+      console.error('Error resetting slots:', error);
+      res.status(500).json({ error: 'Failed to reset slots' });
+    }
+  });
+
   // Mount all routes under /api
   app.use('/api', router);
 }; 

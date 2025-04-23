@@ -3,15 +3,6 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import App from './App';
 import { io } from 'socket.io-client';
 
-// Add type declarations for vi
-declare global {
-  namespace vi {
-    interface MockContext {
-      calls: any[];
-    }
-  }
-}
-
 // Mock socket.io-client
 vi.mock('socket.io-client', () => ({
   io: vi.fn(() => ({

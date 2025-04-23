@@ -11,7 +11,7 @@ jest.mock('./db', () => ({
 }));
 
 describe('API Routes', () => {
-  let app: ReturnType<typeof express>;
+  let app: express.Application;
   let router: Router;
   let io: Server;
   let mockQuery: jest.Mock;
@@ -23,9 +23,8 @@ describe('API Routes', () => {
       emit: jest.fn(),
     } as any;
     mockQuery = query as jest.Mock;
-    setupRoutes(router, io);
+    setupRoutes(app, io);
     app.use(express.json());
-    app.use(router);
   });
 
   afterEach(() => {
@@ -189,6 +188,52 @@ describe('API Routes', () => {
         .expect(400);
 
       expect(res.body).toEqual({ error: 'Invalid reservation' });
+    });
+  });
+
+  describe('POST /api/slots/reset', () => {
+    it('should reset all reserved slots to available', async () => {
+      const mockResetSlots = [
+        {
+          id: 1,
+          start_time: '2024-01-01T08:00:00Z',
+          end_time: '2024-01-01T09:00:00Z',
+          status: 'available',
+          nurse_id: null,
+        },
+        {
+          id: 2,
+          start_time: '2024-01-01T09:00:00Z',
+          end_time: '2024-01-01T10:00:00Z',
+          status: 'available',
+          nurse_id: null,
+        },
+      ];
+      mockQuery.mockResolvedValueOnce({ rows: mockResetSlots });
+
+      const res = await request(app)
+        .post('/api/slots/reset')
+        .expect(200);
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE time_slots'),
+        []
+      );
+      expect(io.emit).toHaveBeenCalledTimes(2); // Once for each reset slot
+      expect(res.body).toEqual({
+        message: 'All slots reset to available',
+        updatedSlots: mockResetSlots,
+      });
+    });
+
+    it('should handle database errors when resetting slots', async () => {
+      mockQuery.mockRejectedValueOnce(new Error('Database error'));
+
+      const res = await request(app)
+        .post('/api/slots/reset')
+        .expect(500);
+
+      expect(res.body).toEqual({ error: 'Failed to reset slots' });
     });
   });
 }); 
