@@ -236,4 +236,53 @@ describe('API Routes', () => {
       expect(res.body).toEqual({ error: 'Failed to reset slots' });
     });
   });
+
+  describe('GET /api/slots/next-week', () => {
+    it('should return available slots for the next 7 days', async () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      const dayAfterTomorrow = new Date(now);
+      dayAfterTomorrow.setDate(now.getDate() + 2);
+
+      const mockSlots = [
+        {
+          id: 1,
+          start_time: tomorrow.toISOString(),
+          end_time: new Date(tomorrow.setHours(tomorrow.getHours() + 1)).toISOString(),
+          status: 'available',
+        },
+        {
+          id: 2,
+          start_time: dayAfterTomorrow.toISOString(),
+          end_time: new Date(dayAfterTomorrow.setHours(dayAfterTomorrow.getHours() + 1)).toISOString(),
+          status: 'available',
+        },
+      ];
+      mockQuery.mockResolvedValueOnce({ rows: mockSlots });
+
+      const res = await request(app)
+        .get('/api/slots/next-week')
+        .expect(200);
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT * FROM time_slots'),
+        expect.arrayContaining([
+          expect.any(String), // now
+          expect.any(String), // 7 days from now
+        ])
+      );
+      expect(res.body).toEqual(mockSlots);
+    });
+
+    it('should handle database errors', async () => {
+      mockQuery.mockRejectedValueOnce(new Error('Database error'));
+
+      const res = await request(app)
+        .get('/api/slots/next-week')
+        .expect(500);
+
+      expect(res.body).toEqual({ error: 'Failed to fetch next week slots' });
+    });
+  });
 }); 

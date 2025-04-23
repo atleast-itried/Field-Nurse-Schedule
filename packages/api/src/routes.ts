@@ -46,6 +46,28 @@ export const setupRoutes = (app: Application, io: Server) => {
     }
   });
 
+  // Get available slots for next 7 days
+  router.get('/slots/next-week', async (req, res) => {
+    try {
+      const now = new Date();
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(now.getDate() + 7);
+
+      const result = await query(
+        `SELECT * FROM time_slots 
+         WHERE status = 'available' 
+         AND start_time >= $1 
+         AND start_time < $2 
+         ORDER BY start_time`,
+        [now.toISOString(), sevenDaysFromNow.toISOString()]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching next week slots:', error);
+      res.status(500).json({ error: 'Failed to fetch next week slots' });
+    }
+  });
+
   // Get available slots for a specific date
   router.get('/slots/:date', async (req, res) => {
     try {
