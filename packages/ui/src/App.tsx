@@ -84,7 +84,7 @@ function App() {
     setSlots(prevSlots =>
       prevSlots.map(slot =>
         slot.id === slotId
-          ? { ...slot, status: 'reserved' as const, nurse_id: 'current-user-id' }
+          ? { ...slot, status: 'reserved' as const }
           : slot
       )
     );
@@ -94,8 +94,7 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nurse_id: 'current-user-id' }), // Replace with actual user ID
+        }
       });
       
       if (!response.ok) {
@@ -103,7 +102,7 @@ function App() {
         setSlots(prevSlots =>
           prevSlots.map(slot =>
             slot.id === slotId
-              ? { ...slot, status: 'available' as const, nurse_id: undefined }
+              ? { ...slot, status: 'available' as const }
               : slot
           )
         );

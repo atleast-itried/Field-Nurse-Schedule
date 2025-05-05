@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Field Nurse Schedule API
-  version: 1.0.0
+  version: 2.0.0
   description: API for managing field nurse scheduling
 
 servers:
@@ -140,29 +140,31 @@ paths:
   /slots/{id}/reserve:
     post:
       summary: Reserve a time slot
-      description: Reserve a time slot for a nurse
+      description: Reserve a time slot by either its ID or start_time
       parameters:
         - name: id
           in: path
+          description: ID of the slot to reserve (can be 0 if using start_time)
           required: true
           schema:
             type: integer
-          description: ID of the time slot to reserve
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                nurse_id:
+                start_time:
                   type: string
-                  description: ID of the nurse reserving the slot
-              required:
-                - nurse_id
+                  format: date-time
+                  description: Start time of the slot to reserve (alternative to using ID)
+              oneOf:
+                - required: ['start_time']
+                - {}
       responses:
         '200':
-          description: Slot reserved successfully
+          description: Slot successfully reserved
           content:
             application/json:
               schema:
@@ -172,13 +174,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: 
+                      - 'Either slot ID or start_time is required'
+                      - 'Slot not available'
         '429':
           description: Too many requests
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ['Too many requests']
         '500':
           description: Server error
           content:
@@ -260,18 +272,38 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   /slots/next-week:
-    get:
-      summary: Get available slots for next 7 days
-      description: Retrieve all available time slots from now until 7 days in the future
+    post:
+      summary: Get available slots for upcoming days
+      description: Retrieve all available time slots from now until a specified number of days in the future (maximum 10 days)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                days:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  description: Number of days to look ahead
+              required:
+                - days
       responses:
         '200':
-          description: List of available time slots for the next 7 days
+          description: List of available time slots for the specified number of days
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/TimeSlot'
+        '400':
+          description: Invalid days parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:

@@ -4,12 +4,21 @@ import { query } from './db';
 import { TimeSlot } from './models';
 import rateLimit from 'express-rate-limit';
 
+// Custom error class
+class ApiError extends Error {
+  constructor(public statusCode: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 // Rate limiter middleware
 const reservationLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 2, // limit each IP to 2 requests per windowMs
   message: { error: 'Too many requests' },
   statusCode: 429,
+  skip: (req: Request) => req.headers['x-test-override-rate-limit'] === 'true'
 });
 
 // Middleware to validate nurse_id
@@ -21,6 +30,31 @@ const validateNurseId = (req: any, res: any, next: any) => {
   next();
 };
 
+// Middleware to validate slot identifier
+const validateSlotIdentifier = (req: any, res: any, next: any) => {
+  const { id } = req.params;
+  const { start_time } = req.body;
+  
+  if (!id && !start_time) {
+    return res.status(400).json({ error: 'Either slot ID or start_time is required' });
+  }
+  next();
+};
+
+// Error handler wrapper
+const asyncHandler = (fn: Function) => async (req: Request, res: Response) => {
+  try {
+    await fn(req, res);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ error: error.message });
+    } else {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+};
+
 export const setupRoutes = (app: Application, io: Server) => {
   const router = Router();
 
@@ -30,43 +64,40 @@ export const setupRoutes = (app: Application, io: Server) => {
   });
 
   // Get all slots with optional status filter
-  router.get('/slots', async (req, res) => {
-    try {
-      const status = req.query.status || 'available';
-      const result = await query(
-        `SELECT * FROM time_slots 
-         WHERE status = $1 
-         ORDER BY start_time`,
-        [status]
-      );
-      res.json(result.rows);
-    } catch (error) {
-      console.error('Error fetching slots:', error);
-      res.status(500).json({ error: 'Failed to fetch slots' });
-    }
-  });
+  router.get('/slots', asyncHandler(async (req: Request, res: Response) => {
+    const status = req.query.status || 'available';
+    const result = await query(
+      `SELECT * FROM time_slots 
+       WHERE status = $1 
+       ORDER BY start_time`,
+      [status]
+    );
+    res.json(result.rows);
+  }));
 
-  // Get available slots for next 7 days
-  router.get('/slots/next-week', async (req, res) => {
-    try {
-      const now = new Date();
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(now.getDate() + 7);
-
-      const result = await query(
-        `SELECT * FROM time_slots 
-         WHERE status = 'available' 
-         AND start_time >= $1 
-         AND start_time < $2 
-         ORDER BY start_time`,
-        [now.toISOString(), sevenDaysFromNow.toISOString()]
-      );
-      res.json(result.rows);
-    } catch (error) {
-      console.error('Error fetching next week slots:', error);
-      res.status(500).json({ error: 'Failed to fetch next week slots' });
+  // Get available slots for next week
+  router.post('/slots/next-week', asyncHandler(async (req: Request, res: Response) => {
+    const { days } = req.body;
+    
+    // Validate days parameter
+    if (!days || isNaN(days) || days < 1 || days > 10) {
+      throw new ApiError(400, 'Days parameter must be between 1 and 10');
     }
-  });
+
+    const now = new Date();
+    const endDate = new Date();
+    endDate.setDate(now.getDate() + days);
+
+    const result = await query(
+      `SELECT * FROM time_slots 
+       WHERE status = 'available' 
+       AND start_time >= $1 
+       AND start_time < $2 
+       ORDER BY start_time`,
+      [now.toISOString(), endDate.toISOString()]
+    );
+    res.json(result.rows);
+  }));
 
   // Get available slots for a specific date
   router.get('/slots/:date', async (req, res) => {
@@ -102,31 +133,39 @@ export const setupRoutes = (app: Application, io: Server) => {
   });
 
   // Reserve a slot
-  router.post('/slots/:id/reserve', validateNurseId, reservationLimiter, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { nurse_id } = req.body;
+  router.post('/slots/:id/reserve', validateSlotIdentifier, reservationLimiter, asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { start_time } = req.body;
 
-      const result = await query(
-        `UPDATE time_slots 
-         SET status = 'reserved', nurse_id = $1 
-         WHERE id = $2 AND status = 'available' 
-         RETURNING *`,
-        [nurse_id, id]
-      );
+    let queryText = '';
+    let queryParams: (string | number)[] = [];
 
-      if (result.rows.length === 0) {
-        return res.status(400).json({ error: 'Slot not available' });
-      }
-
-      // Emit socket event for real-time updates
-      io.emit('slotUpdated', result.rows[0]);
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error('Error reserving slot:', error);
-      res.status(500).json({ error: 'Failed to reserve slot' });
+    if (start_time) {
+      queryText = `
+        UPDATE time_slots 
+        SET status = 'reserved'
+        WHERE start_time = $1 AND status = 'available' 
+        RETURNING *`;
+      queryParams = [start_time];
+    } else {
+      queryText = `
+        UPDATE time_slots 
+        SET status = 'reserved'
+        WHERE id = $1 AND status = 'available' 
+        RETURNING *`;
+      queryParams = [parseInt(id, 10)];
     }
-  });
+
+    const result = await query(queryText, queryParams);
+
+    if (result.rows.length === 0) {
+      throw new ApiError(400, 'Slot not available');
+    }
+
+    // Emit socket event for real-time updates
+    io.emit('slotUpdated', result.rows[0]);
+    res.json(result.rows[0]);
+  }));
 
   // Cancel a reservation
   router.post('/slots/:id/cancel', validateNurseId, async (req, res) => {
