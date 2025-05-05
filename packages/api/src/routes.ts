@@ -2,7 +2,6 @@ import { Application, Request, Response, Router } from 'express';
 import { Server } from 'socket.io';
 import { query } from './db';
 import { TimeSlot } from './models';
-import rateLimit from 'express-rate-limit';
 
 // Custom error class
 class ApiError extends Error {
@@ -11,15 +10,6 @@ class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
-
-// Rate limiter middleware
-const reservationLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 2, // limit each IP to 2 requests per windowMs
-  message: { error: 'Too many requests' },
-  statusCode: 429,
-  skip: (req: Request) => req.headers['x-test-override-rate-limit'] === 'true'
-});
 
 // Middleware to validate nurse_id
 const validateNurseId = (req: any, res: any, next: any) => {
@@ -133,7 +123,7 @@ export const setupRoutes = (app: Application, io: Server) => {
   });
 
   // Reserve a slot
-  router.post('/slots/:id/reserve', validateSlotIdentifier, reservationLimiter, asyncHandler(async (req: Request, res: Response) => {
+  router.post('/slots/:id/reserve', validateSlotIdentifier, asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { start_time } = req.body;
 
