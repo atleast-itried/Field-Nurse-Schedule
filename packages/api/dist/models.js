@@ -13,8 +13,6 @@ exports.generateTimeSlots = exports.createTables = void 0;
 const createTables = (pool) => __awaiter(void 0, void 0, void 0, function* () {
     const client = yield pool.connect();
     try {
-        // Drop existing tables to start fresh
-        yield client.query('DROP TABLE IF EXISTS time_slots CASCADE');
         yield client.query(`
       CREATE TABLE IF NOT EXISTS time_slots (
         id SERIAL PRIMARY KEY,

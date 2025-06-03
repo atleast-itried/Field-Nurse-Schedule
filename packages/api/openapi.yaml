@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Field Nurse Schedule API
-  version: 2.0.0
+  version: 3.0.0
   description: API for managing field nurse scheduling
 
 servers:
@@ -77,16 +77,20 @@ paths:
                   - status
 
   /slots:
-    get:
+    post:
       summary: Get all slots
       description: Retrieve all time slots with optional status filter
-      parameters:
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [available, reserved]
-          description: Filter slots by status
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [available, reserved]
+                  description: Filter slots by status
       responses:
         '200':
           description: List of time slots
@@ -103,18 +107,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /slots/{date}:
-    get:
+  /slots/date:
+    post:
       summary: Get slots for a specific date
       description: Retrieve all time slots for a specific date
-      parameters:
-        - name: date
-          in: path
-          required: true
-          schema:
-            type: string
-            format: date
-          description: Date in YYYY-MM-DD format
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: Date in YYYY-MM-DD format
+              required:
+                - date
       responses:
         '200':
           description: List of time slots for the specified date

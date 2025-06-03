@@ -20,18 +20,22 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const poolConfig = {
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: {
+        rejectUnauthorized: false
+    }
 };
 const pool = new pg_1.Pool(poolConfig);
 const setupDatabase = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log('Creating tables...');
         yield (0, models_1.createTables)(pool);
+        console.log('Generating time slots...');
         yield (0, models_1.generateTimeSlots)(pool, 30); // Generate slots for the next 30 days
-        console.log('Database connection established and tables created');
+        console.log('Database initialization completed successfully!');
     }
     catch (error) {
         console.error('Database setup failed:', error);
-        process.exit(1);
+        throw error;
     }
 });
 exports.setupDatabase = setupDatabase;
