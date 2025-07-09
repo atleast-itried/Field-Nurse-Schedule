@@ -17,6 +17,23 @@ interface SlotsViewProps {
   title: string;
 }
 
+const formatUTC = (date: Date, fmt: string) => {
+  // Only supports the formats used below
+  if (fmt === 'MMM d, yyyy') {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+  }
+  if (fmt === 'h:mm a') {
+    let hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  }
+  return '';
+};
+
 const SlotsView: React.FC<SlotsViewProps> = ({ slots, onReserveSlot, title }) => {
   return (
     <div className="slots-view">
@@ -34,11 +51,11 @@ const SlotsView: React.FC<SlotsViewProps> = ({ slots, onReserveSlot, title }) =>
               disabled={slot.status === 'reserved'}
             >
               <div className="slot-date">
-                {format(new Date(slot.start_time), 'MMM d, yyyy')}
+                {formatUTC(new Date(slot.start_time), 'MMM d, yyyy')}
               </div>
               <div className="slot-time">
-                {format(new Date(slot.start_time), 'h:mm a')} -{' '}
-                {format(new Date(slot.end_time), 'h:mm a')}
+                {formatUTC(new Date(slot.start_time), 'h:mm a')} -{' '}
+                {formatUTC(new Date(slot.end_time), 'h:mm a')} UTC
               </div>
               <div className="slot-status">{slot.status}</div>
             </Button>
