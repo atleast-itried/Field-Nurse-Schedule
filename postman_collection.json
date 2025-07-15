@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "Field Nurse Schedule API",
+    "description": "API for managing field nurse time slots and schedules",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Get All Time Slots",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/slots",
+          "host": ["{{baseUrl}}"],
+          "path": ["slots"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\": \"available\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Time Slots by Date",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/slots/date",
+          "host": ["{{baseUrl}}"],
+          "path": ["slots", "date"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"date\": \"{{date}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Next Week Slots",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/slots/next-week",
+          "host": ["{{baseUrl}}"],
+          "path": ["slots", "next-week"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"days\": 7\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Reserve Time Slot",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/slots/{{slotId}}/reserve",
+          "host": ["{{baseUrl}}"],
+          "path": ["slots", "{{slotId}}", "reserve"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"start_time\": \"{{startTime}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Cancel Time Slot Reservation",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/slots/{{slotId}}/cancel",
+          "host": ["{{baseUrl}}"],
+          "path": ["slots", "{{slotId}}", "cancel"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nurse_id\": \"{{nurseId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Reset All Slots",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/slots/reset",
+          "host": ["{{baseUrl}}"],
+          "path": ["slots", "reset"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://fns-scheduler-app-095cc2bbe204.herokuapp.com/api",
+      "type": "string"
+    },
+    {
+      "key": "date",
+      "value": "2024-03-20",
+      "type": "string"
+    },
+    {
+      "key": "slotId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "nurseId",
+      "value": "nurse123",
+      "type": "string"
+    },
+    {
+      "key": "startTime",
+      "value": "2024-03-20T09:00:00Z",
+      "type": "string"
+    }
+  ]
+} 

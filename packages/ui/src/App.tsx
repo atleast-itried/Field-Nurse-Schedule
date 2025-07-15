@@ -57,11 +57,20 @@ function App() {
   useEffect(() => {
     const fetchSlots = async () => {
       try {
-        const url = viewMode === 'date' 
-          ? `${API_URL}/api/slots/${format(selectedDate, 'yyyy-MM-dd')}`
-          : `${API_URL}/api/slots?status=available`;
-        
-        const response = await fetch(url);
+        let response;
+        if (viewMode === 'date') {
+          response = await fetch(`${API_URL}/api/slots/date`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: format(selectedDate, 'yyyy-MM-dd') })
+          });
+        } else {
+          response = await fetch(`${API_URL}/api/slots`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'available' })
+          });
+        }
         if (!response.ok) {
           throw new Error('Failed to fetch slots');
         }
@@ -77,10 +86,7 @@ function App() {
   }, [selectedDate, viewMode]);
 
   const handleReserveSlot = async (slotId: number) => {
-    // Add to optimistic updates
     setOptimisticUpdates(prev => new Set(prev).add(slotId));
-    
-    // Optimistic update
     setSlots(prevSlots =>
       prevSlots.map(slot =>
         slot.id === slotId
@@ -90,15 +96,13 @@ function App() {
     );
 
     try {
+      const slot = slots.find(s => s.id === slotId);
       const response = await fetch(`${API_URL}/api/slots/${slotId}/reserve`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(slot ? { start_time: slot.start_time } : {})
       });
-      
       if (!response.ok) {
-        // Revert optimistic update on failure
         setSlots(prevSlots =>
           prevSlots.map(slot =>
             slot.id === slotId
@@ -108,15 +112,12 @@ function App() {
         );
         throw new Error('Failed to reserve slot');
       }
-
-      // Remove from optimistic updates after successful reservation
       setOptimisticUpdates(prev => {
         const next = new Set(prev);
         next.delete(slotId);
         return next;
       });
     } catch (error) {
-      // Remove from optimistic updates on error
       setOptimisticUpdates(prev => {
         const next = new Set(prev);
         next.delete(slotId);

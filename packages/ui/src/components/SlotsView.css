@@ -29,8 +29,8 @@
 }
 
 .slot.reserved {
-  background-color: #fff5f5;
-  border-color: #feb2b2;
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
   cursor: not-allowed;
 }
 
